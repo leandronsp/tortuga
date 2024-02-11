@@ -14,11 +14,8 @@ class BankStatement
   def call
     result = {}
 
-    db.describe_prepared('select_account_stmt') rescue db.prepare('select_account_stmt', sql_select_account)
-    db.describe_prepared('ten_transactions_stmt') rescue db.prepare('ten_transactions_stmt', sql_ten_transactions)
-
     db.transaction do 
-      account = db.exec_prepared('select_account_stmt', [@account_id]).first
+      account = db.exec_params(sql_select_account, [@account_id]).first
       raise NotFoundError unless account
 
       result["saldo"] = {  
@@ -27,7 +24,7 @@ class BankStatement
         "limite": account['limit_amount'].to_i
       }
 
-      ten_transactions = db.exec_prepared('ten_transactions_stmt', [@account_id])
+      ten_transactions = db.exec_params(sql_ten_transactions, [@account_id])
 
       result["ultimas_transacoes"] = ten_transactions.map do |transaction|
         { 

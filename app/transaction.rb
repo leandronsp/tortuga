@@ -22,14 +22,10 @@ class Transaction
     raise InvalidDataError unless @account_id && @amount && @transaction_type && @description
     raise InvalidDataError if @description && @description.empty?
 
-    db.describe_prepared('select_account_stmt') rescue db.prepare('select_account_stmt', sql_select_account)
-    db.describe_prepared('insert_transaction_stmt') rescue db.prepare('insert_transaction_stmt', sql_insert_transaction)
-    db.describe_prepared('update_balance_stmt') rescue db.prepare('update_balance_stmt', sql_update_balance)
-
     db.transaction do 
       raise InvalidDataError unless %w[d c].include?(@transaction_type)
 
-      account = db.exec_prepared('select_account_stmt', [@account_id]).first
+      account = db.exec_params(sql_select_account, [@account_id]).first
       raise NotFoundError unless account
 
       limit_amount = account['limit_amount'].to_i
@@ -38,11 +34,15 @@ class Transaction
       raise InvalidLimitAmountError if @transaction_type == 'd' && 
                                         reaching_limit?(balance, limit_amount, @amount)
 
-      db.exec_prepared('insert_transaction_stmt', [@account_id, @amount, @transaction_type, @description])
+      db.exec_params(sql_insert_transaction, 
+                     [@account_id, @amount, @transaction_type, @description])
 
-      db.exec_prepared('update_balance_stmt', [@account_id, @amount])
+      case @transaction_type
+      in 'c' then db.exec_params(sql_increase_balance, [@account_id, @amount])
+      in 'd' then db.exec_params(sql_decrease_balance, [@account_id, @amount])
+      end
 
-      account = db.exec_prepared('select_account_stmt', [@account_id]).first
+      account = db.exec_params(sql_select_account, [@account_id]).first
 
       result.merge!({ 
         limite: account['limit_amount'].to_i,
@@ -55,15 +55,18 @@ class Transaction
 
   private 
 
-  def sql_update_balance
-    case @transaction_type
-    in 'd' then operation = 'amount = amount - $2'
-    in 'c' then operation = 'amount = amount + $2'
-    end
-
+  def sql_increase_balance
     <<~SQL
       UPDATE balances 
-      SET #{operation}
+      SET amount = amount + $2
+      WHERE account_id = $1
+    SQL
+  end
+
+  def sql_decrease_balance
+    <<~SQL
+      UPDATE balances 
+      SET amount = amount - $2
       WHERE account_id = $1
     SQL
   end
