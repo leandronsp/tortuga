@@ -24,7 +24,7 @@ stress.it: ## Run stress tests
 	@sh stress-test/run-test.sh
 
 docker.build: ## Build the docker image
-	@docker build -t leandronsp/agostinho --target prod .
+	@docker build -t leandronsp/tortuga --target prod .
 
 docker.push: ## Push the docker image
-	@docker push leandronsp/agostinho
+	@docker push leandronsp/tortuga
