@@ -2,6 +2,8 @@
 
 Uma versão em Ruby puro da [rinha do backend 2ª edição](https://github.com/zanfranceschi/rinha-de-backend-2024-q1) 2024/Q1, sem frameworks.
 
+<img width="780" alt="Screenshot 2024-02-11 at 15 55 22" src="https://github.com/leandronsp/tortuga/assets/385640/c9d9c08d-199b-4fd4-b2bf-7a8f5085e754">
+
 ## Requisitos
 
 * [Docker](https://docs.docker.com/get-docker/)
