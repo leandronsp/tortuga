@@ -62,7 +62,7 @@ class Handler
 
       case request
       in "GET /clientes/:id/extrato"
-        body = BankStatement.call(params['id'])
+        body = BankStatement.call(params['id']).to_json
 
         status = 200
       in "POST /clientes/:id/transacoes"
@@ -71,7 +71,7 @@ class Handler
           params['valor'], 
           params['tipo'], 
           params['descricao']
-        )
+        ).to_json
 
         status = 200
       else 

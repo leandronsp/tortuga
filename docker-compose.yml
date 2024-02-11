@@ -6,7 +6,8 @@ services:
     container_name: api1
     environment:
       - RUBY_YJIT_ENABLE=1
-      - DB_POOL_SIZE=5
+      - DB_POOL_SIZE=10
+      - THREAD_POOL_SIZE=5
     command: ruby server.rb
     volumes:
       - .:/app
@@ -17,7 +18,7 @@ services:
       resources:
         limits:
           cpus: '0.3'
-          memory: '150MB'
+          memory: '100MB'
 
   api2: 
     <<: *api
@@ -38,7 +39,7 @@ services:
       resources:
         limits:
           cpus: '0.7'
-          memory: '200MB'
+          memory: '300MB'
 
   nginx:
     image: nginx 

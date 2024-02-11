@@ -17,43 +17,69 @@ class Transaction
   end
 
   def call
+    result = {}
+
     raise InvalidDataError unless @account_id && @amount && @transaction_type && @description
     raise InvalidDataError if @description && @description.empty?
 
     db.transaction do 
-      current = db.exec_params(
-        File.read('app/sql/select_account.sql'),
-        [@account_id]
-      ).first
+      raise InvalidDataError unless %w[d c].include?(@transaction_type)
 
-      raise NotFoundError unless current
+      account = db.exec_params(sql_select_account, [@account_id]).first
+      raise NotFoundError unless account
 
-      limit_amount = current['limit_amount'].to_i
-      balance = current['balance'].to_i
+      limit_amount = account['limit_amount'].to_i
+      balance = account['balance'].to_i
 
       raise InvalidLimitAmountError if @transaction_type == 'd' && 
                                         reaching_limit?(balance, limit_amount, @amount)
 
-      db.exec_params(
-        File.read('app/sql/insert_transaction.sql'),
-        [@account_id, @amount, @transaction_type, @description]
-      )
+      db.exec_params(sql_insert_transaction, 
+                     [@account_id, @amount, @transaction_type, @description])
 
-      update_operation = @transaction_type == 'd' ? '-' : '+'
+      db.exec_params(sql_update_balance(@transaction_type), [@account_id, @amount])
 
-      db.exec_params(
-        File.read('app/sql/update_balance.sql').gsub('{{operation}}', update_operation),
-        [@account_id, @amount]
-      )
+      account = db.exec_params(sql_select_account, [@account_id]).first
 
-      db.exec_params(
-        File.read('app/sql/select_account_as_json.sql'),
-        [@account_id]
-      ).first['json_build_object']
+      result.merge!({ 
+        limite: account['limit_amount'].to_i,
+        saldo: account['balance'].to_i
+      })
     end
+
+    result
   end
 
   private 
+
+  def sql_update_balance(transaction_type)
+    operation = transaction_type == 'd' ? '-' : '+'
+
+    <<~SQL
+      UPDATE balances
+      SET amount = amount #{operation} $1
+      WHERE account_id = $2
+    SQL
+  end
+
+  def sql_insert_transaction
+    <<~SQL
+      INSERT INTO transactions (account_id, amount, transaction_type, description)
+      VALUES ($1, $2, $3, $4)
+    SQL
+  end
+
+  def sql_select_account
+    <<~SQL
+      SELECT 
+        balances.amount AS balance, 
+        accounts.limit_amount AS limit_amount
+      FROM accounts 
+      JOIN balances ON balances.account_id = accounts.id
+      WHERE accounts.id = $1
+      FOR UPDATE
+    SQL
+  end
 
   def reaching_limit?(balance, limit_amount, amount)
     return false if (balance - amount) > limit_amount

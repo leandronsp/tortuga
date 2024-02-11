@@ -15,7 +15,8 @@ puts "Listening on port 3000"
 queue = Queue.new
 
 ## Thread Pool
-5.times do
+thread_count = ENV['THREAD_POOL_SIZE'] || 5
+thread_count.to_i.times do
   Thread.new do 
     loop do 
       client = queue.pop
