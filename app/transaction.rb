@@ -21,10 +21,9 @@ class Transaction
 
     raise InvalidDataError unless @account_id && @amount && @transaction_type && @description
     raise InvalidDataError if @description && @description.empty?
+    raise InvalidDataError unless %w[d c].include?(@transaction_type)
 
     db.transaction do 
-      raise InvalidDataError unless %w[d c].include?(@transaction_type)
-
       account = db.exec_params(sql_select_account, [@account_id]).first
       raise NotFoundError unless account
 

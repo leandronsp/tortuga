@@ -43,7 +43,7 @@ class BankStatement
 
   def sql_ten_transactions
     <<~SQL
-      SELECT amount, transaction_type, description, date
+      SELECT amount, transaction_type, description, TO_CHAR(date, 'YYYY-MM-DD HH:MI:SS.US')
       FROM transactions
       WHERE transactions.account_id = $1
       ORDER BY date DESC
