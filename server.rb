@@ -31,7 +31,7 @@ end
 
 ## Listen for incoming connections
 loop do 
-  client, _ = socket.accept
+  client, _ = socket.accept # blocking
 
   ## Add client socket to the queue
   ## and let the threads handle it.
