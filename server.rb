@@ -3,6 +3,7 @@ require_relative 'app/handler'
 
 ## TCP Server
 socket = Socket.new(:INET, :STREAM) 
+socket.setsockopt(:SOL_SOCKET, :SO_REUSEADDR, true)
 addr = Socket.pack_sockaddr_in(3000, '0.0.0.0')
 
 ## Bind the socket to the address
